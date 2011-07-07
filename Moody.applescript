@@ -4,6 +4,7 @@ global track_artist
 global track
 global old_mood
 global changed
+global no_mood
 
 -- Polling interval
 property polling_interval : 10
@@ -18,15 +19,8 @@ on run
 	set changed to false
 	set track_name to missing value
 	set track_artist to missing value
+	set no_mood to true
 	
-	-- Try to get old mood message from Skype
-	if isRunning("Skype") then
-		tell application "Skype"
-			set temp_mood to send command "GET PROFILE MOOD_TEXT" script name "Moody"
-			set AppleScript's text item delimiters to "TEXT "
-			set old_mood to text item 2 of temp_mood
-		end tell
-	end if
 	idle
 end run
 
@@ -34,11 +28,21 @@ end run
 on idle
 	-- Check if Spotify and Skype are running
 	if isRunning("Spotify") and isRunning("Skype") then
-	
+		
+		-- Try to get old mood message from Skype
+		if no_mood then
+			tell application "Skype"
+				set temp_mood to send command "GET PROFILE MOOD_TEXT" script name "Moody"
+				set AppleScript's text item delimiters to "TEXT "
+				set old_mood to text item 2 of temp_mood
+			end tell
+			set no_mood to false
+		end if
+		
 		-- Get track from Spotify
 		tell application "Spotify"
 			-- Check if track has changed
-			if current track is not missing value and track_name is not name of current track and track_artist is not name of current track then
+			if current track is not missing value and track_name is not name of current track and track_artist is not artist of current track then
 				set changed to true
 				set track_name to name of current track
 				set track_artist to artist of current track
