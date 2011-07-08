@@ -40,18 +40,16 @@ on idle
 		end if
 		
 		-- Get track from Spotify. try because sometimes Spotify returns unexpected data
-		try
-			tell application "Spotify"
-				-- Check if track has changed
-				if current track is not missing value and track_name is not name of current track and track_artist is not artist of current track then
-					set changed to true
-					set track_name to name of current track
-					set track_artist to artist of current track
-				else
-					set changed to false
-				end if
-			end tell
-		end try
+		tell application "Spotify"
+			-- Check if track has changed
+			if class of current track is track and track_name is not name of current track and track_artist is not artist of current track then
+				set changed to true
+				set track_name to name of current track
+				set track_artist to artist of current track
+			else
+				set changed to false
+			end if
+		end tell
 		
 		-- Send new mood message to Skype if the track has changed
 		if changed then
