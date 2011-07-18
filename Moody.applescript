@@ -4,6 +4,8 @@ global track_artist
 global track
 global old_mood
 global changed
+global spotify_up
+global state
 
 -- Polling interval
 property polling_interval : 10
@@ -18,7 +20,6 @@ on run
 	set changed to false
 	set track_name to missing value
 	set track_artist to missing value
-	set no_mood to true
 	
 	-- Check if Spotify and Skype are running
 	if isRunning("Skype") then
@@ -36,28 +37,43 @@ end run
 -- Infinite Loop One
 on idle
 	-- Check if Spotify and Skype are running
-	if isRunning("Spotify") and isRunning("Skype") then
-		
-		-- Get track from Spotify. try because sometimes Spotify returns unexpected data
-		tell application "Spotify"
-			-- Check if track has changed
-			if class of current track is track then
-				if track_name is not name of current track or track_artist is not artist of current track then
-					set changed to true
-					set track_name to name of current track
-					set track_artist to artist of current track
+	if isRunning("Skype") then
+		if isRunning("Spotify") then
+			-- Get track from Spotify. try because sometimes Spotify returns unexpected data
+			tell application "Spotify"
+				-- Check if track has changed
+				if player state is not stopped and class of current track is track then
+					if track_name is not name of current track or track_artist is not artist of current track then
+						set changed to true
+						set track_name to name of current track
+						set track_artist to artist of current track
+					else
+						set changed to false
+					end if
+				-- If it is stopped, put back the original mood message
 				else
-					set changed to false
+					tell application "Skype"
+						send command "SET PROFILE MOOD_TEXT " & old_mood script name "Moody"
+					end tell
 				end if
-			end if
-		end tell
-		
-		-- Send new mood message to Skype if the track has changed
-		if changed then
-			set track to "(music) " & track_artist & " - " & track_name
-			tell application "Skype"
-				send command "SET PROFILE MOOD_TEXT " & track script name "Moody"
 			end tell
+			
+			-- Send new mood message to Skype if the track has changed
+			if changed then
+				set track to "(music) " & track_artist & " - " & track_name
+				tell application "Skype"
+					send command "SET PROFILE MOOD_TEXT " & track script name "Moody"
+				end tell
+			end if
+			set spotify_up to true
+			
+		-- If Spotify was just quit, put back the original mood message	
+		else if spotify_up then
+			tell application "Skype"
+				send command "SET PROFILE MOOD_TEXT " & old_mood script name "Moody"
+			end tell
+			set changed to false
+			set spotify_up to false
 		end if
 	end if
 	return polling_interval
